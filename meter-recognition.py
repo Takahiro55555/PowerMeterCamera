@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 
 import cv2
@@ -22,9 +23,11 @@ def main():
     img_normalized_02 = normalize(img_fliped_02)
     img_normalized_03 = normalize(img_fliped_03)
     img_normalized_04 = normalize(img_fliped_04)
-    sv = np.full((20, 1), 122, np.uint8)
+    # network = init_network()
+
+    sv = np.full((28, 1), 122, np.uint8)  # 区切り線（垂直）
     # print(img_normalized_01)
-    img_normalized_all = np.hstack((img_normalized_01, sv, img_normalized_02, sv, img_normalized_03, sv, img_normalized_04))
+    img_normalized_all = np.hstack((img_normalized_04, sv, img_normalized_03, sv, img_normalized_02, sv, img_normalized_01))  # 結合
     cv2.imwrite("%s.extracted.jpg" % fname, img_normalized_all)
     # cv2.imshow('img_normalized_all', img_normalized_all)
     # cv2.waitKey(0)
@@ -84,7 +87,7 @@ def normalize(img_meter):
 
     opening = cv2.morphologyEx(dst2, cv2.MORPH_OPEN, make_ellipse_kernel())  # 縮小した後、元の大きさに拡大
     opening_sq = transform_to_square(opening)
-    img_resized = cv2.resize(opening_sq, dsize=(20, 20), interpolation = cv2.THRESH_BINARY)
+    img_resized = cv2.resize(opening_sq, dsize=(28, 28), interpolation = cv2.THRESH_BINARY)
     # cv2.imshow('img_resized', img_resized)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
@@ -101,6 +104,14 @@ def normalize(img_meter):
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     return img_resized
+
+def init_network():
+    """
+    学習済みモデルを読み込む
+    """
+    with open("sample_weight.pkl", 'rb') as f:
+        network = pickle.load(f)
+    return network
 
 def transform_to_square(img_c1):
     img_tmp = img_c1[:, :]
