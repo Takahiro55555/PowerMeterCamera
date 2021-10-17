@@ -18,6 +18,15 @@ COPYED_IMG_LIST="data/copied.txt"
 PI_HOSTNAME="pi0wh-01"
 
 
+# ダウンロード元のラズパイから ICMP エコー応答が返ってくるか確認する
+ICMP_REACHABLE=$(ping -c1 ${PI_HOSTNAME} | grep ttl | wc -l || : )
+
+# ICMP エコー応答が無い場合はスクリプトを終了する
+if [[ "${ICMP_REACHABLE}" == 0 ]]; then
+    echo "[ERROR] '${PI_HOSTNAME}' からの ICMP エコー応答を確認できません"
+    exit 1
+fi
+
 # ファイル名に '.copied' が付加されていない画像ファイルから一番古い日付のファイル名を抽出する
 TOP_IMG_NAME=$(echo 'ls ${HOME}/img/*.png | head -n1' | \
                ssh pi@${PI_HOSTNAME} | \
