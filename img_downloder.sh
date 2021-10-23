@@ -15,8 +15,7 @@ IMG_DIR="data/img/src"
 COPYED_IMG_LIST="data/copied.txt"
 
 # ダウンロード元のラズパイのホスト名
-PI_HOSTNAME="pi0wh-01"
-
+PI_HOSTNAME="10.0.0.41"
 
 # ダウンロード元のラズパイから ICMP エコー応答が返ってくるか確認する
 ICMP_REACHABLE=$(ping -c1 ${PI_HOSTNAME} | grep ttl | wc -l || : )
@@ -27,11 +26,14 @@ if [[ "${ICMP_REACHABLE}" == 0 ]]; then
     exit 1
 fi
 
+# NOTE: ssh の引数にホスト名を直接渡すと5回に4回位の割合でエラーを吐くため、
+#       ホスト名から IPv4アドレスを割り出し、当該アドレスを引数に渡す
+# TODO: 上記のエラーの原因は、今後調査する
+PI_IPV4_ADDRESS=$(host pi0wh-01 | head -n1 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}')
+echo "Pi IPv4 Address: ${PI_IPV4_ADDRESS}"
+
 # ファイル名に '.copied' が付加されていない画像ファイルから一番古い日付のファイル名を抽出する
-TOP_IMG_NAME=$(echo 'ls ${HOME}/img/*.png | head -n1' | \
-               ssh pi@${PI_HOSTNAME} | \
-               tail -n1 | \
-               grep -oE "[0-9a-zA-Z_\-]+\.png$")
+TOP_IMG_NAME=$(ssh pi@${PI_IPV4_ADDRESS} -p 22 'ls ${HOME}/img/*.png | head -n1')
 
 #   ダウンロード先ディレクトリにあるファイル一覧から、
 # 上記で取得したファイル名以降に作成されたファイル名をすべて抽出する
@@ -43,10 +45,10 @@ ls ${IMG_DIR}/*.png | \
     grep -oE "[0-9a-zA-Z_\-]+\.png$" > ${COPYED_IMG_LIST}
 
 # 上記で抽出したファイル一覧を保存したテキストファイルをラズパイに転送する
-scp ${COPYED_IMG_LIST} pi@${PI_HOSTNAME}:~/copied.txt
+scp ${COPYED_IMG_LIST} pi@${PI_IPV4_ADDRESS}:~/copied.txt
 
 # 上記で転送したテキストファイルに記載されているファイル名を変更する
-echo 'cat copied.txt | xargs -I{} mv img/{} img/{}.copied' | ssh pi@${PI_HOSTNAME}
+ssh pi@${PI_IPV4_ADDRESS} -p 22 'cat copied.txt | xargs -I{} mv img/{} img/{}.copied'
 
 # まだダウンロードしていない画像ファイルをダウンロードする
-time scp pi@${PI_HOSTNAME}:~/img/*.png data/img/src
+time scp pi@${PI_IPV4_ADDRESS}:~/img/*.png data/img/src
