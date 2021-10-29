@@ -33,7 +33,7 @@ PI_IPV4_ADDRESS=$(host ${PI_HOSTNAME} | head -n1 | grep -oE '([0-9]{1,3}\.){3}[0
 echo "Pi IPv4 Address: ${PI_IPV4_ADDRESS}"
 
 # ファイル名に '.copied' が付加されていない画像ファイルから一番古い日付のファイル名を抽出する
-TOP_IMG_NAME=$(ssh pi@${PI_IPV4_ADDRESS} -p 22 'ls ${HOME}/img/*.png | head -n1')
+TOP_IMG_NAME=$(ssh pi@${PI_IPV4_ADDRESS} -p 22 'ls ${HOME}/img/*.png | head -n1 | grep -oE "[0-9\-]+\.png$"')
 
 #   ダウンロード先ディレクトリにあるファイル一覧から、
 # 上記で取得したファイル名以降に作成されたファイル名をすべて抽出する
